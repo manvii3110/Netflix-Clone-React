@@ -1,25 +1,42 @@
-import React, { useState, useContext} from 'react';
+import React, { useState, useContext } from 'react';
+import { useHistory } from 'react-router-dom';
 import { FirebaseContext } from '../context/firebase';
+import { Form } from '../components';
 import { HeaderContainer } from '../containers/header';
 import { FooterContainer } from '../containers/footer';
-import { Form } from '../components';
-
+import * as ROUTES from '../constants/routes';
 
 export default function SignIn() {
-    const {firebase } = useContext(FirebaseContext);
-    const [emailAddress, setEmailAddress] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const isInvalid = password === '' || emailAddress === '';
+  const history = useHistory();
+  const { firebase } = useContext(FirebaseContext);
 
-    const handleSignin = (event) => {
+  const [emailAddress, setEmailAddress] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  const isInvalid = password === '' || emailAddress === '';
+
+  const handleSignin = (event) => {
     event.preventDefault();
-  }
-    return (
+
+    return firebase
+      .auth()
+      .signInWithEmailAndPassword(emailAddress, password)
+      .then(() => {
+        history.push(ROUTES.BROWSE);
+      })
+      .catch((error) => {
+        setEmailAddress('');
+        setPassword('');
+        setError(error.message);
+      });
+  };
+
+  return (
     <>
-    <HeaderContainer>
-    <Form>
-    <Form.Title>Sign In</Form.Title>
+      <HeaderContainer>
+        <Form>
+          <Form.Title>Sign In</Form.Title>
           {error && <Form.Error data-testid="error">{error}</Form.Error>}
 
           <Form.Base onSubmit={handleSignin} method="POST">
@@ -46,9 +63,9 @@ export default function SignIn() {
           <Form.TextSmall>
             This page is protected by Google reCAPTCHA to ensure you're not a bot. Learn more.
           </Form.TextSmall>
-    </Form>
-    </HeaderContainer>
-    <FooterContainer/>
+        </Form>
+      </HeaderContainer>
+      <FooterContainer />
     </>
-    );
+  );
 }
