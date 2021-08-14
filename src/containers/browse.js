@@ -1,4 +1,5 @@
-import React,{ useState, useContext , useEffect} from "react";
+import React, { useState, useEffect, useContext } from 'react';
+import Fuse from 'fuse.js';
 import { Card, Header, Loading, Player } from '../components';
 import * as ROUTES from '../constants/routes';
 import logo from '../logo.svg';
@@ -16,7 +17,7 @@ export function BrowseContainer({ slides }) {
   const { firebase } = useContext(FirebaseContext);
   const user = firebase.auth().currentUser || {};
 
-    useEffect(() => {
+  useEffect(() => {
     setTimeout(() => {
       setLoading(false);
     }, 3000);
@@ -26,7 +27,18 @@ export function BrowseContainer({ slides }) {
     setSlideRows(slides[category]);
   }, [slides, category]);
 
-    return profile.displayName ? (
+  useEffect(() => {
+    const fuse = new Fuse(slideRows, { keys: ['data.description', 'data.title', 'data.genre'] });
+    const results = fuse.search(searchTerm).map(({ item }) => item);
+
+    if (slideRows.length > 0 && searchTerm.length > 3 && results.length > 0) {
+      setSlideRows(results);
+    } else {
+      setSlideRows(slides[category]);
+    }
+  }, [searchTerm]);
+
+  return profile.displayName ? (
     <>
       {loading ? <Loading src={user.photoURL} /> : <Loading.ReleaseBody />}
 
@@ -76,7 +88,8 @@ export function BrowseContainer({ slides }) {
             <Card.Entities>
               {slideItem.data.map((item) => (
                 <Card.Item key={item.docId} item={item}>
-                  <Card.Image src={`/images/${category}/${item.genre}/${item.slug}/small.jpg`} />
+                  <Card.Image src={`/images/${category}/${item.genre}/${item.slug}/small.jpg`} 
+                  />
                   <Card.Meta>
                     <Card.SubTitle>{item.title}</Card.SubTitle>
                     <Card.Text>{item.description}</Card.Text>
@@ -85,12 +98,10 @@ export function BrowseContainer({ slides }) {
               ))}
             </Card.Entities>
             <Card.Feature category={category}>
-              {/*<Player>
+              <Player>
                 <Player.Button />
                 <Player.Video src="/videos/bunny.mp4" />
               </Player>
-              */}
-              <p>heyy there</p>
             </Card.Feature>
           </Card>
         ))}
